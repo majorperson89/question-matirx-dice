@@ -325,6 +325,17 @@
     white-space:nowrap;
   }
   .new-session-btn:hover{ background:var(--violet-dark); }
+  .delete-session-btn{
+    font-size:12px;
+    color:var(--tangerine-dark);
+    background:#fff;
+    border:1.5px solid #FFC9B5;
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .delete-session-btn:hover{ background:#FFEADD; }
   .history-list{
     display:flex;
     flex-direction:column;
@@ -409,6 +420,7 @@
       <div class="history-controls">
         <select class="session-select" id="sessionSelect"></select>
         <button class="new-session-btn" id="newSessionBtn">＋ 새 기록 시작</button>
+        <button class="delete-session-btn" id="deleteSessionBtn">🗑️ 삭제</button>
       </div>
     </div>
     <p class="viewing-old-note" id="viewingOldNote" style="display:none;">다른 기록을 보고 있어요 (주사위를 굴리면 우리 모둠 기록에 추가돼요)</p>
@@ -476,6 +488,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
   const historyList = document.getElementById('historyList');
   const sessionSelect = document.getElementById('sessionSelect');
   const newSessionBtn = document.getElementById('newSessionBtn');
+  const deleteSessionBtn = document.getElementById('deleteSessionBtn');
   const viewingOldNote = document.getElementById('viewingOldNote');
   const syncBadge = document.getElementById('syncBadge');
   const configWarning = document.getElementById('configWarning');
@@ -494,7 +507,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
   };
   // shared: 모든 모둠의 기록 리스트를 모아둔 공용 저장소. Firestore로 동기화됨
   let shared = {
-    sessions: [{ id: 1, label: '기록 1', history: [] }]
+    sessions: [{ id: 1, label: '기록 1', history: [], createdAt: Date.now() }]
   };
   let viewingSessionId = 1;
   let docRef = null;
@@ -525,7 +538,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
           const data = snap.data();
           shared.sessions = Array.isArray(data.sessions) && data.sessions.length
             ? data.sessions
-            : [{ id: 1, label: '기록 1', history: [] }];
+            : [{ id: 1, label: '기록 1', history: [], createdAt: Date.now() }];
         } else {
           await setDoc(docRef, shared);
         }
@@ -669,12 +682,19 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
     scopeBtn.textContent = scopePanel.classList.contains('open') ? '⚙️ 범위 설정 닫기' : '⚙️ 뽑기 범위 설정';
   });
 
+  function formatDate(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
   function renderSessionSelect(){
     sessionSelect.innerHTML = '';
     [...shared.sessions].reverse().forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = s.label + (s.id === local.myActiveSessionId ? ' (우리 모둠 사용중)' : '') + ` · ${s.history.length}개`;
+      const activeMark = s.id === local.myActiveSessionId ? ' (우리 모둠 사용중)' : '';
+      opt.textContent = `${s.label} · ${formatDate(s.createdAt)}${activeMark} · ${s.history.length}개`;
       sessionSelect.appendChild(opt);
     });
     sessionSelect.value = viewingSessionId;
@@ -712,10 +732,30 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
 
   newSessionBtn.addEventListener('click', () => {
     const newId = Math.max(...shared.sessions.map(s => s.id)) + 1;
-    shared.sessions.push({ id: newId, label: `기록 ${newId}`, history: [] });
+    shared.sessions.push({ id: newId, label: `기록 ${newId}`, history: [], createdAt: Date.now() });
     if(shared.sessions.length > MAX_SESSIONS) shared.sessions.shift();
     local.myActiveSessionId = newId; // 우리 모둠의 뽑기만 이 새 기록으로 이동. 다른 모둠은 그대로 유지됨
     viewingSessionId = newId;
+    renderAll();
+    saveShared();
+  });
+
+  deleteSessionBtn.addEventListener('click', () => {
+    if(shared.sessions.length <= 1){
+      alert('기록은 최소 1개 남아있어야 해요.');
+      return;
+    }
+    const target = viewingSession();
+    const ok = confirm(`"${target.label}" 기록을 삭제할까요? 되돌릴 수 없어요.`);
+    if(!ok) return;
+
+    shared.sessions = shared.sessions.filter(s => s.id !== target.id);
+
+    if(local.myActiveSessionId === target.id){
+      local.myActiveSessionId = shared.sessions[0].id;
+    }
+    viewingSessionId = local.myActiveSessionId;
+
     renderAll();
     saveShared();
   });
