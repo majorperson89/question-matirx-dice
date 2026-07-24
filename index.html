@@ -390,10 +390,10 @@
 
   <div class="scope-panel" id="scopePanel">
     <div class="scope-head">
-      <span class="scope-title">뽑기 범위 정하기 (모두에게 공유됩니다)</span>
+      <span class="scope-title">뽑기 범위 정하기 (이 화면에서만 적용돼요)</span>
       <span class="scope-count" id="scopeCount">36칸 중 36개 사용</span>
     </div>
-    <p class="scope-desc">첫말(행), 끝말(열), 또는 칸 하나하나를 체크 해제해서 뽑기에서 제외할 수 있어요. 맨 왼쪽 위 체크박스로 전체 선택/해제도 가능해요.</p>
+    <p class="scope-desc">첫말(행), 끝말(열), 또는 칸 하나하나를 체크 해제해서 뽑기에서 제외할 수 있어요. 이 설정은 다른 모둠과 공유되지 않고, 이 브라우저 창을 닫거나 새로고침하면 초기화돼요.</p>
     <p class="scope-warn" id="scopeWarn"></p>
     <div class="grid-wrap">
       <table class="matrix-grid" id="matrixGrid"></table>
@@ -405,7 +405,7 @@
 
   <div class="history-wrap">
     <div class="history-head">
-      <span class="history-title">📜 뽑힌 질문 기록</span>
+      <span class="history-title">📜 뽑힌 질문 기록 <span style="font-size:11px; font-weight:400; color:#a99fcf;">(반 전체 공유)</span></span>
       <div class="history-controls">
         <select class="session-select" id="sessionSelect"></select>
         <button class="new-session-btn" id="newSessionBtn">＋ 새 기록 시작</button>
@@ -428,7 +428,7 @@
   // ▼▼▼▼▼ 여기에 Firebase 콘솔에서 복사한 firebaseConfig 값을 붙여넣으세요 ▼▼▼▼▼
   // (질문 뽑기 사이트에 쓴 것과 같은 프로젝트의 config를 그대로 써도 됩니다)
   const firebaseConfig = {
- apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
+apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
   authDomain: "guroquestionforthinking.firebaseapp.com",
   projectId: "guroquestionforthinking",
   storageBucket: "guroquestionforthinking.firebasestorage.app",
@@ -484,10 +484,14 @@
   const MAX_HISTORY_PER_SESSION = 15;
   const MAX_SESSIONS = 12;
 
+  // local: 이 브라우저(모둠)에서만 쓰는 상태. 저장하지 않으므로 새로고침하면 초기화됨
   // excluded: 길이 36 배열. excluded[r*6+c] === true 면 그 칸은 뽑기에서 제외
-  let state = {
+  let local = {
     lastRoll: null,
-    excluded: new Array(36).fill(false),
+    excluded: new Array(36).fill(false)
+  };
+  // shared: 반 전체가 함께 보는 뽑힌 질문 기록. Firestore로 동기화됨
+  let shared = {
     sessions: [{ id: 1, label: '기록 1', history: [] }],
     currentSessionId: 1
   };
@@ -499,10 +503,10 @@
     syncBadge.className = 'sync-badge' + (cls ? ' ' + cls : '');
   }
 
-  async function saveState(){
+  async function saveShared(){
     if(!docRef) return;
     try{
-      await setDoc(docRef, state);
+      await setDoc(docRef, shared);
     }catch(e){
       console.error(e);
       setBadge('저장 실패 (연결 확인)', 'error');
@@ -518,19 +522,15 @@
       onSnapshot(docRef, async (snap) => {
         if(snap.exists()){
           const data = snap.data();
-          state.lastRoll = data.lastRoll || null;
-          state.excluded = Array.isArray(data.excluded) && data.excluded.length === 36
-            ? data.excluded
-            : new Array(36).fill(false);
-          state.sessions = Array.isArray(data.sessions) && data.sessions.length
+          shared.sessions = Array.isArray(data.sessions) && data.sessions.length
             ? data.sessions
             : [{ id: 1, label: '기록 1', history: [] }];
-          state.currentSessionId = data.currentSessionId || state.sessions[state.sessions.length - 1].id;
+          shared.currentSessionId = data.currentSessionId || shared.sessions[shared.sessions.length - 1].id;
         } else {
-          await setDoc(docRef, state);
+          await setDoc(docRef, shared);
         }
-        if(!state.sessions.some(s => s.id === viewingSessionId)){
-          viewingSessionId = state.currentSessionId;
+        if(!shared.sessions.some(s => s.id === viewingSessionId)){
+          viewingSessionId = shared.currentSessionId;
         }
         setBadge('실시간 공유 연결됨 ✓', 'live');
         renderAll();
@@ -550,7 +550,7 @@
   }
 
   function idx(r, c){ return r * 6 + c; }
-  function isExcluded(r, c){ return !!state.excluded[idx(r, c)]; }
+  function isExcluded(r, c){ return !!local.excluded[idx(r, c)]; }
   function availablePairs(){
     const list = [];
     for(let r = 0; r < 6; r++){
@@ -561,12 +561,12 @@
     return list;
   }
 
-  function currentSession(){ return state.sessions.find(s => s.id === state.currentSessionId); }
-  function viewingSession(){ return state.sessions.find(s => s.id === viewingSessionId) || currentSession(); }
+  function currentSession(){ return shared.sessions.find(s => s.id === shared.currentSessionId); }
+  function viewingSession(){ return shared.sessions.find(s => s.id === viewingSessionId) || currentSession(); }
 
   function renderAll(){
-    if(state.lastRoll){
-      const { r, c } = state.lastRoll;
+    if(local.lastRoll){
+      const { r, c } = local.lastRoll;
       die1.textContent = firstWords[r];
       die2.innerHTML = lastLabels[c] + '<span class="die-sub">(' + lastWords[c] + ')</span>';
       resultEl.innerHTML = renderTagged(templates[r][c]);
@@ -625,17 +625,17 @@
   }
 
   function toggledSingle(r, c){
-    const next = [...state.excluded];
+    const next = [...local.excluded];
     next[idx(r, c)] = !next[idx(r, c)];
     return next;
   }
   function toggledRow(r, wasAllIncluded){
-    const next = [...state.excluded];
+    const next = [...local.excluded];
     for(let c = 0; c < 6; c++) next[idx(r, c)] = wasAllIncluded; // 포함되어 있었으면 -> 전부 제외
     return next;
   }
   function toggledCol(c, wasAllIncluded){
-    const next = [...state.excluded];
+    const next = [...local.excluded];
     for(let r = 0; r < 6; r++) next[idx(r, c)] = wasAllIncluded;
     return next;
   }
@@ -648,9 +648,8 @@
       return;
     }
     scopeWarn.textContent = '';
-    state.excluded = next;
+    local.excluded = next;
     renderAll();
-    saveState();
   }
 
   scopeAllBtn.addEventListener('click', () => {
@@ -664,10 +663,10 @@
 
   function renderSessionSelect(){
     sessionSelect.innerHTML = '';
-    [...state.sessions].reverse().forEach(s => {
+    [...shared.sessions].reverse().forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = s.label + (s.id === state.currentSessionId ? ' (진행중)' : '') + ` · ${s.history.length}개`;
+      opt.textContent = s.label + (s.id === shared.currentSessionId ? ' (진행중)' : '') + ` · ${s.history.length}개`;
       sessionSelect.appendChild(opt);
     });
     sessionSelect.value = viewingSessionId;
@@ -675,7 +674,7 @@
 
   function renderHistory(){
     const sess = viewingSession();
-    viewingOldNote.style.display = (sess.id !== state.currentSessionId) ? 'block' : 'none';
+    viewingOldNote.style.display = (sess.id !== shared.currentSessionId) ? 'block' : 'none';
     historyList.innerHTML = '';
     if(!sess || sess.history.length === 0){
       const p = document.createElement('p');
@@ -704,13 +703,13 @@
   });
 
   newSessionBtn.addEventListener('click', () => {
-    const newId = Math.max(...state.sessions.map(s => s.id)) + 1;
-    state.sessions.push({ id: newId, label: `기록 ${newId}`, history: [] });
-    if(state.sessions.length > MAX_SESSIONS) state.sessions.shift();
-    state.currentSessionId = newId;
+    const newId = Math.max(...shared.sessions.map(s => s.id)) + 1;
+    shared.sessions.push({ id: newId, label: `기록 ${newId}`, history: [] });
+    if(shared.sessions.length > MAX_SESSIONS) shared.sessions.shift();
+    shared.currentSessionId = newId;
     viewingSessionId = newId;
     renderAll();
-    saveState();
+    saveShared();
   });
 
   rollBtn.addEventListener('click', () => {
@@ -734,7 +733,7 @@
         do{
           pick = avail[Math.floor(Math.random() * avail.length)];
           attempts++;
-        } while(avail.length > 1 && state.lastRoll && pick[0] === state.lastRoll.r && pick[1] === state.lastRoll.c && attempts < 30);
+        } while(avail.length > 1 && local.lastRoll && pick[0] === local.lastRoll.r && pick[1] === local.lastRoll.c && attempts < 30);
         const [r, c] = pick;
 
         die1.textContent = firstWords[r];
@@ -744,14 +743,14 @@
 
         resultEl.innerHTML = renderTagged(templates[r][c]);
 
-        state.lastRoll = { r, c };
+        local.lastRoll = { r, c };
         const sess = currentSession();
         sess.history.unshift(renderPlain(templates[r][c]));
         if(sess.history.length > MAX_HISTORY_PER_SESSION) sess.history.length = MAX_HISTORY_PER_SESSION;
 
-        viewingSessionId = state.currentSessionId;
+        viewingSessionId = shared.currentSessionId;
         renderAll();
-        saveState();
+        saveShared();
       }
     }, 70);
   });
