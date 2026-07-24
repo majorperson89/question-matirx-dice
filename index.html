@@ -84,7 +84,7 @@
   .dice-row{
     display:flex;
     gap:20px;
-    margin-bottom:26px;
+    margin-bottom:20px;
   }
   .die{
     width:150px;
@@ -105,9 +105,7 @@
     0%,100%{ transform:translateY(0) rotate(0deg); }
     50%{ transform:translateY(-4px) rotate(-1.5deg); }
   }
-  .die.rolling{
-    animation:shake 0.09s linear infinite;
-  }
+  .die.rolling{ animation:shake 0.09s linear infinite; }
   @keyframes shake{
     0%{ transform:rotate(-3deg) scale(1.03); }
     50%{ transform:rotate(3deg) scale(1.03); }
@@ -117,6 +115,13 @@
   #die1{ background:linear-gradient(160deg, #FF9270, var(--tangerine)); color:#fff; box-shadow:0 6px 0 var(--tangerine-dark); }
   #die2{ background:linear-gradient(160deg, #48D6B4, var(--teal)); color:#fff; box-shadow:0 6px 0 var(--teal-dark); }
 
+  .btn-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-bottom:6px;
+  }
   #rollBtn{
     font-family:'Gaegu', sans-serif;
     font-size:19px;
@@ -129,15 +134,27 @@
     cursor:pointer;
     box-shadow:0 5px 0 var(--violet-dark);
     transition:transform 0.05s ease;
-    margin-bottom:24px;
   }
   #rollBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--violet-dark); }
   #rollBtn:disabled{ opacity:0.55; cursor:default; }
 
+  .scope-btn{
+    font-family:'Gaegu', sans-serif;
+    font-size:15px;
+    color:var(--ink);
+    background:#fff;
+    border:2px solid var(--teal);
+    padding:12px 20px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  .scope-btn:hover{ background:var(--teal); color:#fff; }
+
   .repeat-note{
     font-size:12.5px;
     color:#8a7fb0;
-    margin:-14px 0 20px;
+    margin:0 0 20px;
+    text-align:center;
   }
 
   .result-card{
@@ -182,6 +199,90 @@
     vertical-align:-2px;
   }
 
+  /* ---- 제외 설정 패널 ---- */
+  .scope-panel{
+    width:100%;
+    max-width:520px;
+    background:#fff;
+    border-radius:18px;
+    border:2px dashed var(--line);
+    padding:18px;
+    margin-top:16px;
+    display:none;
+  }
+  .scope-panel.open{ display:block; }
+  .scope-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:4px;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .scope-title{
+    font-family:'Gaegu', sans-serif;
+    font-size:16px;
+    color:var(--violet-dark);
+  }
+  .scope-count{ font-size:12.5px; color:#8a7fb0; }
+  .scope-desc{
+    font-size:12.5px;
+    color:#8a7fb0;
+    margin:0 0 14px;
+  }
+  .scope-warn{
+    font-size:12.5px;
+    color:var(--tangerine-dark);
+    font-weight:bold;
+    min-height:16px;
+    margin-bottom:6px;
+  }
+  .grid-wrap{ overflow-x:auto; }
+  table.matrix-grid{
+    border-collapse:collapse;
+    width:100%;
+    min-width:460px;
+    font-size:11.5px;
+  }
+  table.matrix-grid th, table.matrix-grid td{
+    border:1px solid var(--line);
+    text-align:center;
+    padding:6px 3px;
+  }
+  table.matrix-grid th{
+    background:var(--paper);
+    color:#5c4d90;
+    font-weight:700;
+  }
+  table.matrix-grid .row-label{
+    background:var(--paper);
+    font-weight:700;
+    color:#5c4d90;
+    white-space:nowrap;
+  }
+  table.matrix-grid input[type="checkbox"]{
+    width:16px; height:16px;
+    cursor:pointer;
+    accent-color:var(--violet);
+  }
+  td.excluded-cell{ background:#FBEDEA; }
+  .scope-actions{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+    justify-content:center;
+  }
+  .scope-actions button{
+    font-size:12.5px;
+    color:var(--ink);
+    background:var(--paper);
+    border:1.5px solid var(--line);
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  .scope-actions button:hover{ background:var(--line); }
+
   /* ---- 히스토리 ---- */
   .history-wrap{
     width:100%;
@@ -202,11 +303,7 @@
     color:var(--violet-dark);
     flex-shrink:0;
   }
-  .history-controls{
-    display:flex;
-    gap:6px;
-    align-items:center;
-  }
+  .history-controls{ display:flex; gap:6px; align-items:center; }
   .session-select{
     font-family:'Gowun Dodum', sans-serif;
     font-size:12.5px;
@@ -247,17 +344,8 @@
     display:flex;
     gap:10px;
   }
-  .history-num{
-    flex-shrink:0;
-    font-weight:700;
-    color:var(--violet);
-  }
-  .history-empty{
-    text-align:center;
-    font-size:13px;
-    color:#a99fcf;
-    padding:18px 0;
-  }
+  .history-num{ flex-shrink:0; font-weight:700; color:var(--violet); }
+  .history-empty{ text-align:center; font-size:13px; color:#a99fcf; padding:18px 0; }
   .viewing-old-note{
     font-size:12px;
     color:var(--tangerine-dark);
@@ -285,8 +373,11 @@
     <div class="die" id="die2">현재<span class="die-sub">(이다·하다)</span></div>
   </div>
 
-  <button id="rollBtn">주사위 굴리기</button>
-  <p class="repeat-note">* 바로 직전과 같은 조합은 다시 나오지 않아요</p>
+  <div class="btn-row">
+    <button id="rollBtn">주사위 굴리기</button>
+    <button class="scope-btn" id="scopeBtn">⚙️ 뽑기 범위 설정</button>
+  </div>
+  <p class="repeat-note" id="repeatNote">* 바로 직전과 같은 조합은 다시 나오지 않아요</p>
 
   <div class="result-card">
     <span id="result">버튼을 눌러 질문을 만들어보세요</span>
@@ -295,6 +386,21 @@
   <div class="legend">
     <span><span class="swatch" style="background:#EDE4FF;"></span>인물이 들어가는 빈칸</span>
     <span><span class="swatch" style="background:#FFEADD;"></span>행동 등 말이 되는 표현이 들어가는 빈칸</span>
+  </div>
+
+  <div class="scope-panel" id="scopePanel">
+    <div class="scope-head">
+      <span class="scope-title">뽑기 범위 정하기 (모두에게 공유됩니다)</span>
+      <span class="scope-count" id="scopeCount">36칸 중 36개 사용</span>
+    </div>
+    <p class="scope-desc">첫말(행), 끝말(열), 또는 칸 하나하나를 체크 해제해서 뽑기에서 제외할 수 있어요. 맨 왼쪽 위 체크박스로 전체 선택/해제도 가능해요.</p>
+    <p class="scope-warn" id="scopeWarn"></p>
+    <div class="grid-wrap">
+      <table class="matrix-grid" id="matrixGrid"></table>
+    </div>
+    <div class="scope-actions">
+      <button id="scopeAllBtn">전체 다시 포함하기</button>
+    </div>
   </div>
 
   <div class="history-wrap">
@@ -322,12 +428,12 @@
   // ▼▼▼▼▼ 여기에 Firebase 콘솔에서 복사한 firebaseConfig 값을 붙여넣으세요 ▼▼▼▼▼
   // (질문 뽑기 사이트에 쓴 것과 같은 프로젝트의 config를 그대로 써도 됩니다)
   const firebaseConfig = {
-    apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
-    authDomain: "guroquestionforthinking.firebaseapp.com",
-    projectId: "guroquestionforthinking",
-    storageBucket: "guroquestionforthinking.firebasestorage.app",
-    messagingSenderId: "716759693824",
-    appId: "1:716759693824:web:3d951898e27e87b34fb6e5
+ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
+  authDomain: "guroquestionforthinking.firebaseapp.com",
+  projectId: "guroquestionforthinking",
+  storageBucket: "guroquestionforthinking.firebasestorage.app",
+  messagingSenderId: "716759693824",
+  appId: "1:716759693824:web:3d951898e27e87b34fb6e5"
   };
   // ▲▲▲▲▲ 여기까지 ▲▲▲▲▲
 
@@ -359,7 +465,14 @@
   const die1 = document.getElementById('die1');
   const die2 = document.getElementById('die2');
   const resultEl = document.getElementById('result');
-  const btn = document.getElementById('rollBtn');
+  const rollBtn = document.getElementById('rollBtn');
+  const repeatNote = document.getElementById('repeatNote');
+  const scopeBtn = document.getElementById('scopeBtn');
+  const scopePanel = document.getElementById('scopePanel');
+  const scopeCount = document.getElementById('scopeCount');
+  const scopeWarn = document.getElementById('scopeWarn');
+  const matrixGrid = document.getElementById('matrixGrid');
+  const scopeAllBtn = document.getElementById('scopeAllBtn');
   const historyList = document.getElementById('historyList');
   const sessionSelect = document.getElementById('sessionSelect');
   const newSessionBtn = document.getElementById('newSessionBtn');
@@ -369,15 +482,16 @@
 
   const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('여기에');
   const MAX_HISTORY_PER_SESSION = 15;
-  const MAX_SESSIONS = 12; // 오래된 기록 리스트는 자동으로 정리됨
+  const MAX_SESSIONS = 12;
 
-  // sessions: [{ id, label, history: [] }, ...]  (배열의 마지막이 가장 최신)
+  // excluded: 길이 36 배열. excluded[r*6+c] === true 면 그 칸은 뽑기에서 제외
   let state = {
     lastRoll: null,
+    excluded: new Array(36).fill(false),
     sessions: [{ id: 1, label: '기록 1', history: [] }],
     currentSessionId: 1
   };
-  let viewingSessionId = 1; // 지금 화면에 보여주고 있는 기록 리스트
+  let viewingSessionId = 1;
   let docRef = null;
 
   function setBadge(text, cls){
@@ -405,6 +519,9 @@
         if(snap.exists()){
           const data = snap.data();
           state.lastRoll = data.lastRoll || null;
+          state.excluded = Array.isArray(data.excluded) && data.excluded.length === 36
+            ? data.excluded
+            : new Array(36).fill(false);
           state.sessions = Array.isArray(data.sessions) && data.sessions.length
             ? data.sessions
             : [{ id: 1, label: '기록 1', history: [] }];
@@ -412,7 +529,6 @@
         } else {
           await setDoc(docRef, state);
         }
-        // 보고 있던 세션이 여전히 있으면 유지, 없으면 최신 세션으로
         if(!state.sessions.some(s => s.id === viewingSessionId)){
           viewingSessionId = state.currentSessionId;
         }
@@ -433,12 +549,20 @@
     renderAll();
   }
 
-  function currentSession(){
-    return state.sessions.find(s => s.id === state.currentSessionId);
+  function idx(r, c){ return r * 6 + c; }
+  function isExcluded(r, c){ return !!state.excluded[idx(r, c)]; }
+  function availablePairs(){
+    const list = [];
+    for(let r = 0; r < 6; r++){
+      for(let c = 0; c < 6; c++){
+        if(!isExcluded(r, c)) list.push([r, c]);
+      }
+    }
+    return list;
   }
-  function viewingSession(){
-    return state.sessions.find(s => s.id === viewingSessionId) || currentSession();
-  }
+
+  function currentSession(){ return state.sessions.find(s => s.id === state.currentSessionId); }
+  function viewingSession(){ return state.sessions.find(s => s.id === viewingSessionId) || currentSession(); }
 
   function renderAll(){
     if(state.lastRoll){
@@ -447,13 +571,99 @@
       die2.innerHTML = lastLabels[c] + '<span class="die-sub">(' + lastWords[c] + ')</span>';
       resultEl.innerHTML = renderTagged(templates[r][c]);
     }
+    const avail = availablePairs();
+    scopeCount.textContent = `36칸 중 ${avail.length}개 사용`;
+    rollBtn.disabled = avail.length === 0;
+    repeatNote.style.display = avail.length > 1 ? 'block' : 'none';
+
+    renderGrid();
     renderSessionSelect();
     renderHistory();
   }
 
+  function renderGrid(){
+    let html = '<tr><th></th>';
+    for(let c = 0; c < 6; c++){
+      html += `<th><label><input type="checkbox" data-col="${c}"> ${lastLabels[c]}</label></th>`;
+    }
+    html += '</tr>';
+    for(let r = 0; r < 6; r++){
+      html += `<tr><th class="row-label"><label><input type="checkbox" data-row="${r}"> ${firstWords[r]}</label></th>`;
+      for(let c = 0; c < 6; c++){
+        const excl = isExcluded(r, c);
+        html += `<td class="${excl ? 'excluded-cell' : ''}"><input type="checkbox" data-r="${r}" data-c="${c}" ${excl ? '' : 'checked'}></td>`;
+      }
+      html += '</tr>';
+    }
+    matrixGrid.innerHTML = html;
+
+    // 개별 칸 체크박스
+    matrixGrid.querySelectorAll('input[data-r]').forEach(box => {
+      box.addEventListener('change', () => {
+        const r = Number(box.dataset.r), c = Number(box.dataset.c);
+        applyExcludedChange(toggledSingle(r, c));
+      });
+    });
+    // 행(첫말) 체크박스: 그 행이 전부 포함되어 있으면 체크됨 상태
+    matrixGrid.querySelectorAll('input[data-row]').forEach(box => {
+      const r = Number(box.dataset.row);
+      const rowAllIncluded = [0,1,2,3,4,5].every(c => !isExcluded(r, c));
+      box.checked = rowAllIncluded;
+      box.addEventListener('change', () => {
+        applyExcludedChange(toggledRow(r, rowAllIncluded));
+      });
+    });
+    // 열(끝말) 체크박스
+    matrixGrid.querySelectorAll('input[data-col]').forEach(box => {
+      const c = Number(box.dataset.col);
+      const colAllIncluded = [0,1,2,3,4,5].every(r => !isExcluded(r, c));
+      box.checked = colAllIncluded;
+      box.addEventListener('change', () => {
+        applyExcludedChange(toggledCol(c, colAllIncluded));
+      });
+    });
+  }
+
+  function toggledSingle(r, c){
+    const next = [...state.excluded];
+    next[idx(r, c)] = !next[idx(r, c)];
+    return next;
+  }
+  function toggledRow(r, wasAllIncluded){
+    const next = [...state.excluded];
+    for(let c = 0; c < 6; c++) next[idx(r, c)] = wasAllIncluded; // 포함되어 있었으면 -> 전부 제외
+    return next;
+  }
+  function toggledCol(c, wasAllIncluded){
+    const next = [...state.excluded];
+    for(let r = 0; r < 6; r++) next[idx(r, c)] = wasAllIncluded;
+    return next;
+  }
+
+  function applyExcludedChange(next){
+    const remaining = next.filter(v => !v).length;
+    if(remaining === 0){
+      scopeWarn.textContent = '적어도 1개 조합은 남아있어야 해요!';
+      renderGrid(); // 체크박스를 원래 상태로 되돌리기 위해 다시 그림
+      return;
+    }
+    scopeWarn.textContent = '';
+    state.excluded = next;
+    renderAll();
+    saveState();
+  }
+
+  scopeAllBtn.addEventListener('click', () => {
+    applyExcludedChange(new Array(36).fill(false));
+  });
+
+  scopeBtn.addEventListener('click', () => {
+    scopePanel.classList.toggle('open');
+    scopeBtn.textContent = scopePanel.classList.contains('open') ? '⚙️ 범위 설정 닫기' : '⚙️ 뽑기 범위 설정';
+  });
+
   function renderSessionSelect(){
     sessionSelect.innerHTML = '';
-    // 최신 기록이 위로 오도록 역순 표시
     [...state.sessions].reverse().forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
@@ -466,7 +676,6 @@
   function renderHistory(){
     const sess = viewingSession();
     viewingOldNote.style.display = (sess.id !== state.currentSessionId) ? 'block' : 'none';
-
     historyList.innerHTML = '';
     if(!sess || sess.history.length === 0){
       const p = document.createElement('p');
@@ -497,37 +706,36 @@
   newSessionBtn.addEventListener('click', () => {
     const newId = Math.max(...state.sessions.map(s => s.id)) + 1;
     state.sessions.push({ id: newId, label: `기록 ${newId}`, history: [] });
-    if(state.sessions.length > MAX_SESSIONS){
-      state.sessions.shift(); // 가장 오래된 기록 리스트 정리
-    }
+    if(state.sessions.length > MAX_SESSIONS) state.sessions.shift();
     state.currentSessionId = newId;
     viewingSessionId = newId;
     renderAll();
     saveState();
   });
 
-  btn.addEventListener('click', () => {
-    btn.disabled = true;
+  rollBtn.addEventListener('click', () => {
+    const avail = availablePairs();
+    if(avail.length === 0) return;
+
+    rollBtn.disabled = true;
     die1.classList.add('rolling');
     die2.classList.add('rolling');
     let ticks = 0;
     const maxTicks = 16;
     const timer = setInterval(() => {
-      const i1 = Math.floor(Math.random() * 6);
-      const i2 = Math.floor(Math.random() * 6);
-      die1.textContent = firstWords[i1];
-      die2.innerHTML = lastLabels[i2] + '<span class="die-sub">(' + lastWords[i2] + ')</span>';
+      const flick = avail[Math.floor(Math.random() * avail.length)];
+      die1.textContent = firstWords[flick[0]];
+      die2.innerHTML = lastLabels[flick[1]] + '<span class="die-sub">(' + lastWords[flick[1]] + ')</span>';
       ticks++;
       if(ticks >= maxTicks){
         clearInterval(timer);
 
-        // 직전 조합과 같으면 다시 뽑기 (최대 30회 시도)
-        let r, c, attempts = 0;
+        let pick, attempts = 0;
         do{
-          r = Math.floor(Math.random() * 6);
-          c = Math.floor(Math.random() * 6);
+          pick = avail[Math.floor(Math.random() * avail.length)];
           attempts++;
-        } while(state.lastRoll && r === state.lastRoll.r && c === state.lastRoll.c && attempts < 30);
+        } while(avail.length > 1 && state.lastRoll && pick[0] === state.lastRoll.r && pick[1] === state.lastRoll.c && attempts < 30);
+        const [r, c] = pick;
 
         die1.textContent = firstWords[r];
         die2.innerHTML = lastLabels[c] + '<span class="die-sub">(' + lastWords[c] + ')</span>';
@@ -541,12 +749,9 @@
         sess.history.unshift(renderPlain(templates[r][c]));
         if(sess.history.length > MAX_HISTORY_PER_SESSION) sess.history.length = MAX_HISTORY_PER_SESSION;
 
-        // 새로 뽑았으니 화면도 최신 기록으로 전환
         viewingSessionId = state.currentSessionId;
         renderAll();
         saveState();
-
-        btn.disabled = false;
       }
     }, 70);
   });
