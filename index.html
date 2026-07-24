@@ -411,7 +411,7 @@
         <button class="new-session-btn" id="newSessionBtn">＋ 새 기록 시작</button>
       </div>
     </div>
-    <p class="viewing-old-note" id="viewingOldNote" style="display:none;">지난 기록을 보고 있어요 (주사위를 굴리면 최신 기록에 추가돼요)</p>
+    <p class="viewing-old-note" id="viewingOldNote" style="display:none;">다른 기록을 보고 있어요 (주사위를 굴리면 우리 모둠 기록에 추가돼요)</p>
     <div class="history-list" id="historyList">
       <p class="history-empty">아직 뽑은 질문이 없어요</p>
     </div>
@@ -486,14 +486,15 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
 
   // local: 이 브라우저(모둠)에서만 쓰는 상태. 저장하지 않으므로 새로고침하면 초기화됨
   // excluded: 길이 36 배열. excluded[r*6+c] === true 면 그 칸은 뽑기에서 제외
+  // myActiveSessionId: 이 모둠이 주사위를 굴렸을 때 기록이 쌓이는 목록. 기본값은 공용 '기록 1'
   let local = {
     lastRoll: null,
-    excluded: new Array(36).fill(false)
+    excluded: new Array(36).fill(false),
+    myActiveSessionId: 1
   };
-  // shared: 반 전체가 함께 보는 뽑힌 질문 기록. Firestore로 동기화됨
+  // shared: 모든 모둠의 기록 리스트를 모아둔 공용 저장소. Firestore로 동기화됨
   let shared = {
-    sessions: [{ id: 1, label: '기록 1', history: [] }],
-    currentSessionId: 1
+    sessions: [{ id: 1, label: '기록 1', history: [] }]
   };
   let viewingSessionId = 1;
   let docRef = null;
@@ -525,12 +526,15 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
           shared.sessions = Array.isArray(data.sessions) && data.sessions.length
             ? data.sessions
             : [{ id: 1, label: '기록 1', history: [] }];
-          shared.currentSessionId = data.currentSessionId || shared.sessions[shared.sessions.length - 1].id;
         } else {
           await setDoc(docRef, shared);
         }
+        // 내가 굴리던 기록이나 보고 있던 기록이 삭제(정리)됐으면 가장 오래된 기록으로 복귀
+        if(!shared.sessions.some(s => s.id === local.myActiveSessionId)){
+          local.myActiveSessionId = shared.sessions[0].id;
+        }
         if(!shared.sessions.some(s => s.id === viewingSessionId)){
-          viewingSessionId = shared.currentSessionId;
+          viewingSessionId = local.myActiveSessionId;
         }
         setBadge('실시간 공유 연결됨 ✓', 'live');
         renderAll();
@@ -561,8 +565,12 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
     return list;
   }
 
-  function currentSession(){ return shared.sessions.find(s => s.id === shared.currentSessionId); }
-  function viewingSession(){ return shared.sessions.find(s => s.id === viewingSessionId) || currentSession(); }
+  function myActiveSession(){
+    return shared.sessions.find(s => s.id === local.myActiveSessionId) || shared.sessions[0];
+  }
+  function viewingSession(){
+    return shared.sessions.find(s => s.id === viewingSessionId) || myActiveSession();
+  }
 
   function renderAll(){
     if(local.lastRoll){
@@ -666,7 +674,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
     [...shared.sessions].reverse().forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = s.label + (s.id === shared.currentSessionId ? ' (진행중)' : '') + ` · ${s.history.length}개`;
+      opt.textContent = s.label + (s.id === local.myActiveSessionId ? ' (우리 모둠 사용중)' : '') + ` · ${s.history.length}개`;
       sessionSelect.appendChild(opt);
     });
     sessionSelect.value = viewingSessionId;
@@ -674,7 +682,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
 
   function renderHistory(){
     const sess = viewingSession();
-    viewingOldNote.style.display = (sess.id !== shared.currentSessionId) ? 'block' : 'none';
+    viewingOldNote.style.display = (sess.id !== local.myActiveSessionId) ? 'block' : 'none';
     historyList.innerHTML = '';
     if(!sess || sess.history.length === 0){
       const p = document.createElement('p');
@@ -706,7 +714,7 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
     const newId = Math.max(...shared.sessions.map(s => s.id)) + 1;
     shared.sessions.push({ id: newId, label: `기록 ${newId}`, history: [] });
     if(shared.sessions.length > MAX_SESSIONS) shared.sessions.shift();
-    shared.currentSessionId = newId;
+    local.myActiveSessionId = newId; // 우리 모둠의 뽑기만 이 새 기록으로 이동. 다른 모둠은 그대로 유지됨
     viewingSessionId = newId;
     renderAll();
     saveShared();
@@ -744,11 +752,11 @@ apiKey: "AIzaSyAm2-iWT3S8pJIaRkL8QAQt3STYk057qgs",
         resultEl.innerHTML = renderTagged(templates[r][c]);
 
         local.lastRoll = { r, c };
-        const sess = currentSession();
+        const sess = myActiveSession();
         sess.history.unshift(renderPlain(templates[r][c]));
         if(sess.history.length > MAX_HISTORY_PER_SESSION) sess.history.length = MAX_HISTORY_PER_SESSION;
 
-        viewingSessionId = shared.currentSessionId;
+        viewingSessionId = local.myActiveSessionId;
         renderAll();
         saveShared();
       }
