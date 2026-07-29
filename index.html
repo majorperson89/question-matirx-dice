@@ -84,13 +84,20 @@
   .dice-row{
     display:flex;
     gap:28px;
-    margin-bottom:24px;
+    margin-bottom:8px;
+  }
+  .dice-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
   }
   .die{
     width:190px;
     height:190px;
     border-radius:34px;
     display:flex;
+    flex-direction:column;
     align-items:center;
     justify-content:center;
     text-align:center;
@@ -98,9 +105,51 @@
     font-size:30px;
     font-weight:700;
     padding:12px;
+    position:relative;
     animation:idle 3s ease-in-out infinite;
   }
-  .die:nth-child(2){ animation-delay:0.4s; }
+  .die-num{
+    position:absolute;
+    top:14px;
+    left:16px;
+    font-family:'Gaegu', sans-serif;
+    font-size:22px;
+    font-weight:700;
+    background:rgba(255,255,255,0.35);
+    color:#fff;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .die-word{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .die-roll-btn{
+    font-family:'Gaegu', sans-serif;
+    font-size:17px;
+    font-weight:700;
+    padding:12px 26px;
+    border-radius:999px;
+    border:none;
+    background:var(--violet);
+    color:#fff;
+    cursor:pointer;
+    box-shadow:0 5px 0 var(--violet-dark);
+    transition:transform 0.05s ease;
+  }
+  .die-roll-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--violet-dark); }
+  .die-roll-btn:disabled{ opacity:0.55; cursor:default; }
+  .dice-col:nth-child(2) .die-roll-btn{
+    background:var(--teal);
+    box-shadow:0 5px 0 var(--teal-dark);
+  }
+  .dice-col:nth-child(2) .die-roll-btn:active{ box-shadow:0 2px 0 var(--teal-dark); }
+  #die2{ animation-delay:0.4s; }
   @keyframes idle{
     0%,100%{ transform:translateY(0) rotate(0deg); }
     50%{ transform:translateY(-4px) rotate(-1.5deg); }
@@ -120,23 +169,8 @@
     gap:12px;
     flex-wrap:wrap;
     justify-content:center;
-    margin-bottom:8px;
+    margin:20px 0 6px;
   }
-  #rollBtn{
-    font-family:'Gaegu', sans-serif;
-    font-size:23px;
-    font-weight:700;
-    padding:18px 50px;
-    border-radius:999px;
-    border:none;
-    background:var(--violet);
-    color:#fff;
-    cursor:pointer;
-    box-shadow:0 6px 0 var(--violet-dark);
-    transition:transform 0.05s ease;
-  }
-  #rollBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--violet-dark); }
-  #rollBtn:disabled{ opacity:0.55; cursor:default; }
 
   .scope-btn{
     font-family:'Gaegu', sans-serif;
@@ -391,12 +425,17 @@
   </div>
 
   <div class="dice-row">
-    <div class="die" id="die1">무엇</div>
-    <div class="die" id="die2">현재<span class="die-sub">(이다·하다)</span></div>
+    <div class="dice-col">
+      <div class="die" id="die1"><span class="die-num" id="die1Num"></span><span class="die-word">무엇</span></div>
+      <button class="die-roll-btn" id="rollRowBtn">① 첫말 굴리기</button>
+    </div>
+    <div class="dice-col">
+      <div class="die" id="die2"><span class="die-num" id="die2Num"></span><span class="die-word">현재<span class="die-sub">(이다·하다)</span></span></div>
+      <button class="die-roll-btn" id="rollColBtn">② 끝말 굴리기</button>
+    </div>
   </div>
 
   <div class="btn-row">
-    <button id="rollBtn">주사위 굴리기</button>
     <button class="scope-btn" id="scopeBtn">⚙️ 뽑기 범위 설정</button>
   </div>
   <p class="repeat-note" id="repeatNote">* 바로 직전과 같은 조합은 다시 나오지 않아요</p>
@@ -461,21 +500,21 @@
   };
   // ▲▲▲▲▲ 여기까지 ▲▲▲▲▲
 
-  const firstWords = ["무엇","언제·어디서","누가","왜","어떻게","이 중"];
-  const lastWords  = ["이다·하다","였다·했다","할 수 있다","한다면 어땠을까","할까","나라면 어떨까"];
-  const lastLabels = ["현재","과거","능력","가정","미래","상상"];
+  const firstWords = ["무엇","누가","언제·어디서","왜","어떻게","이 중"];
+  const lastWords  = ["이다·하다","였다·했다","할까","할 수 있다","한다면 어땠을까","나라면 어떨까"];
+  const lastLabels = ["현재","과거","미래","능력","가정","상상"];
 
   // 뽑기 범위 설정 표에서만 쓰는 번호 + 전체 이름 라벨 (주사위 표시용 firstWords/lastLabels와는 별개)
-  const scopeRowLabels = ["1. 무엇(사건)","2. 언제·어디서(상황)","3. 누가(사람)","4. 왜(이유)","5. 어떻게(방법)","6. 이 중에서(선택)"];
+  const scopeRowLabels = ["1. 무엇(사건)","2. 누가(사람)","3. 언제·어디서(상황)","4. 왜(이유)","5. 어떻게(방법)","6. 이 중에서(선택)"];
   const scopeColLabels = lastLabels.map((label, i) => `${i + 1}. ${label}`);
 
   const templates = [
-    ["{P}이 {O}하는 것은 무엇인가요?","{P}이 {O}했던 것은 무엇이었나요?","{P}이 {O}할 수 있는 것은 무엇인가요?","{P}이 {O}한다면, 무슨 일이 일어났을까요?","{P}이 {O}할 것은 무엇일까요?","{P}이라면, {O}하는 것은 무엇인가요?"],
-    ["언제·어디서 {P}는 {O}을 하나요?","언제·어디서 {P}는 {O}을 했나요?","언제·어디서 {P}는 {O}을 할 수 있나요?","{O}한다면, 언제·어디서 {P}는 {O}을 했을까요?","언제·어디서 {P}는 {O}을 할까요?","{P}라면, 언제·어디서 {O}을 할까요?"],
-    ["누가 {O}을 하나요?","누가 {O}을 했나요?","누가 {O}을 할 수 있나요?","{O}한다면, 누가 {O}을 했을까요?","누가 {O}을 할까요?","{P}라면, 누가 {O}을 하면 좋을까요?"],
-    ["왜 {P}는 {O}을 하나요?","왜 {P}는 {O}을 했나요?","왜 {P}는 {O}을 할 수 있나요?","{O}한다면, {P}는 왜 그랬을까요?","왜 {P}는 {O}을 할까요?","{P}라면, 왜 {O}을 하고 싶을까요?"],
-    ["어떻게 {P}는 {O}을 하나요?","어떻게 {P}는 {O}을 했나요?","어떻게 {P}는 {O}을 할 수 있나요?","{O}한다면, 어떻게 {P}는 {O}을 했을까요?","어떻게 {P}는 {O}을 할까요?","{P}라면, 어떻게 {O}을 할까요?"],
-    ["이 중 무엇이 {O}인가요?","이 중 무엇이 {O}이었나요?","이 중 무엇이 {O}일 수 있나요?","{O}한다면, 이 중 무엇이 {O}했을까요?","이 중 무엇이 {O}일까요?","{P}라면, 이 중 무엇을 {O}하고 싶나요?"]
+    ["{P}이 {O}하는 것은 무엇인가요?","{P}이 {O}했던 것은 무엇이었나요?","{P}이 {O}할 것은 무엇일까요?","{P}이 {O}할 수 있는 것은 무엇인가요?","{P}이 {O}한다면, 무슨 일이 일어났을까요?","{P}이라면, {O}하는 것은 무엇인가요?"],
+    ["누가 {O}을 하나요?","누가 {O}을 했나요?","누가 {O}을 할까요?","누가 {O}을 할 수 있나요?","{O}한다면, 누가 {O}을 했을까요?","{P}라면, 누가 {O}을 하면 좋을까요?"],
+    ["언제·어디서 {P}는 {O}을 하나요?","언제·어디서 {P}는 {O}을 했나요?","언제·어디서 {P}는 {O}을 할까요?","언제·어디서 {P}는 {O}을 할 수 있나요?","{O}한다면, 언제·어디서 {P}는 {O}을 했을까요?","{P}라면, 언제·어디서 {O}을 할까요?"],
+    ["왜 {P}는 {O}을 하나요?","왜 {P}는 {O}을 했나요?","왜 {P}는 {O}을 할까요?","왜 {P}는 {O}을 할 수 있나요?","{O}한다면, {P}는 왜 그랬을까요?","{P}라면, 왜 {O}을 하고 싶을까요?"],
+    ["어떻게 {P}는 {O}을 하나요?","어떻게 {P}는 {O}을 했나요?","어떻게 {P}는 {O}을 할까요?","어떻게 {P}는 {O}을 할 수 있나요?","{O}한다면, 어떻게 {P}는 {O}을 했을까요?","{P}라면, 어떻게 {O}을 할까요?"],
+    ["이 중 무엇이 {O}인가요?","이 중 무엇이 {O}이었나요?","이 중 무엇이 {O}일까요?","이 중 무엇이 {O}일 수 있나요?","{O}한다면, 이 중 무엇이 {O}했을까요?","{P}라면, 이 중 무엇을 {O}하고 싶나요?"]
   ];
 
   function renderTagged(str){
@@ -490,10 +529,52 @@
     return str.replace(/\{P\}/g, '누군가').replace(/\{O\}/g, '(＿＿)');
   }
 
+  // ---- 굴릴 때 나는 "데구르르" 소리 (오디오 파일 없이 즉석에서 합성) ----
+  let audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) audioCtx = new AC();
+    }
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function playTick(pitch){
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(pitch, t);
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+  function playLanding(){
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.exponentialRampToValueAtTime(110, t + 0.15);
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  }
+
   const die1 = document.getElementById('die1');
   const die2 = document.getElementById('die2');
+  const die1Num = document.getElementById('die1Num');
+  const die2Num = document.getElementById('die2Num');
   const resultEl = document.getElementById('result');
-  const rollBtn = document.getElementById('rollBtn');
+  const rollRowBtn = document.getElementById('rollRowBtn');
+  const rollColBtn = document.getElementById('rollColBtn');
   const repeatNote = document.getElementById('repeatNote');
   const scopeBtn = document.getElementById('scopeBtn');
   const scopePanel = document.getElementById('scopePanel');
@@ -518,7 +599,9 @@
   // excluded: 길이 36 배열. excluded[r*6+c] === true 면 그 칸은 뽑기에서 제외
   // myActiveSessionId: 이 모둠이 주사위를 굴렸을 때 기록이 쌓이는 목록. 기본값은 공용 '기록 1'
   let local = {
-    lastRoll: null,
+    row: null,   // 첫말 주사위 결과 (0~5)
+    col: null,   // 끝말 주사위 결과 (0~5)
+    lastCompleted: null, // 직전에 완성됐던 (row,col) 조합 - 중복 방지용
     excluded: new Array(36).fill(false),
     myActiveSessionId: 1
   };
@@ -594,6 +677,30 @@
     }
     return list;
   }
+  // 첫말(행) 주사위 후보: 지금 끝말이 정해져 있으면 그 끝말과 짝지어 사용 가능한 행만
+  function rowCandidates(){
+    const cands = [];
+    for(let r = 0; r < 6; r++){
+      if(local.col !== null){
+        if(!isExcluded(r, local.col)) cands.push(r);
+      } else if([0,1,2,3,4,5].some(c => !isExcluded(r, c))){
+        cands.push(r);
+      }
+    }
+    return cands.length ? cands : [0,1,2,3,4,5];
+  }
+  // 끝말(열) 주사위 후보
+  function colCandidates(){
+    const cands = [];
+    for(let c = 0; c < 6; c++){
+      if(local.row !== null){
+        if(!isExcluded(local.row, c)) cands.push(c);
+      } else if([0,1,2,3,4,5].some(r => !isExcluded(r, c))){
+        cands.push(c);
+      }
+    }
+    return cands.length ? cands : [0,1,2,3,4,5];
+  }
 
   function myActiveSession(){
     return shared.sessions.find(s => s.id === local.myActiveSessionId) || shared.sessions[0];
@@ -602,16 +709,34 @@
     return shared.sessions.find(s => s.id === viewingSessionId) || myActiveSession();
   }
 
-  function renderAll(){
-    if(local.lastRoll){
-      const { r, c } = local.lastRoll;
-      die1.textContent = firstWords[r];
-      die2.innerHTML = lastLabels[c] + '<span class="die-sub">(' + lastWords[c] + ')</span>';
-      resultEl.innerHTML = renderTagged(templates[r][c]);
+  function renderDie(){
+    if(local.row !== null){
+      die1Num.textContent = local.row + 1;
+      die1.querySelector('.die-word').textContent = firstWords[local.row];
+    } else {
+      die1Num.textContent = '?';
+      die1.querySelector('.die-word').textContent = '?';
     }
+    if(local.col !== null){
+      die2Num.textContent = local.col + 1;
+      die2.querySelector('.die-word').innerHTML = lastLabels[local.col] + '<span class="die-sub">(' + lastWords[local.col] + ')</span>';
+    } else {
+      die2Num.textContent = '?';
+      die2.querySelector('.die-word').textContent = '?';
+    }
+    if(local.row !== null && local.col !== null){
+      resultEl.innerHTML = renderTagged(templates[local.row][local.col]);
+    } else {
+      resultEl.textContent = '두 주사위를 모두 굴려서 질문을 만들어보세요';
+    }
+  }
+
+  function renderAll(){
+    renderDie();
     const avail = availablePairs();
     scopeCount.textContent = `36칸 중 ${avail.length}개 사용`;
-    rollBtn.disabled = avail.length === 0;
+    rollRowBtn.disabled = avail.length === 0;
+    rollColBtn.disabled = avail.length === 0;
     repeatNote.style.display = avail.length > 1 ? 'block' : 'none';
 
     renderGrid();
@@ -788,48 +913,72 @@
     saveShared();
   });
 
-  rollBtn.addEventListener('click', () => {
-    const avail = availablePairs();
-    if(avail.length === 0) return;
+  function rollDie(which){
+    ensureAudio();
+    const wasComplete = (local.row !== null && local.col !== null);
+    const prevPair = wasComplete ? { r: local.row, c: local.col } : null;
 
-    rollBtn.disabled = true;
-    die1.classList.add('rolling');
-    die2.classList.add('rolling');
+    const candidates = which === 'row' ? rowCandidates() : colCandidates();
+    if(candidates.length === 0) return;
+
+    rollRowBtn.disabled = true;
+    rollColBtn.disabled = true;
+    const dieEl = which === 'row' ? die1 : die2;
+    dieEl.classList.add('rolling');
+
     let ticks = 0;
-    const maxTicks = 16;
+    const maxTicks = 14;
     const timer = setInterval(() => {
-      const flick = avail[Math.floor(Math.random() * avail.length)];
-      die1.textContent = firstWords[flick[0]];
-      die2.innerHTML = lastLabels[flick[1]] + '<span class="die-sub">(' + lastWords[flick[1]] + ')</span>';
+      const flick = candidates[Math.floor(Math.random() * candidates.length)];
+      if(which === 'row'){
+        die1Num.textContent = flick + 1;
+        die1.querySelector('.die-word').textContent = firstWords[flick];
+      } else {
+        die2Num.textContent = flick + 1;
+        die2.querySelector('.die-word').innerHTML = lastLabels[flick] + '<span class="die-sub">(' + lastWords[flick] + ')</span>';
+      }
+      playTick(160 + Math.random() * 140);
       ticks++;
       if(ticks >= maxTicks){
         clearInterval(timer);
 
+        // 직전 완성 조합과 똑같아지지 않도록 시도 (다른 후보가 있을 때만)
         let pick, attempts = 0;
         do{
-          pick = avail[Math.floor(Math.random() * avail.length)];
+          pick = candidates[Math.floor(Math.random() * candidates.length)];
           attempts++;
-        } while(avail.length > 1 && local.lastRoll && pick[0] === local.lastRoll.r && pick[1] === local.lastRoll.c && attempts < 30);
-        const [r, c] = pick;
+        } while(
+          candidates.length > 1 && prevPair &&
+          ((which === 'row' && pick === prevPair.r && local.col === prevPair.c) ||
+           (which === 'col' && pick === prevPair.c && local.row === prevPair.r)) &&
+          attempts < 30
+        );
 
-        die1.textContent = firstWords[r];
-        die2.innerHTML = lastLabels[c] + '<span class="die-sub">(' + lastWords[c] + ')</span>';
-        die1.classList.remove('rolling');
-        die2.classList.remove('rolling');
+        if(which === 'row') local.row = pick; else local.col = pick;
 
-        resultEl.innerHTML = renderTagged(templates[r][c]);
+        dieEl.classList.remove('rolling');
+        playLanding();
+        renderDie();
 
-        local.lastRoll = { r, c };
-        const sess = myActiveSession();
-        sess.history.unshift(renderPlain(templates[r][c]));
-        if(sess.history.length > MAX_HISTORY_PER_SESSION) sess.history.length = MAX_HISTORY_PER_SESSION;
+        if(local.row !== null && local.col !== null){
+          local.lastCompleted = { r: local.row, c: local.col };
+          const sess = myActiveSession();
+          sess.history.unshift(renderPlain(templates[local.row][local.col]));
+          if(sess.history.length > MAX_HISTORY_PER_SESSION) sess.history.length = MAX_HISTORY_PER_SESSION;
+          viewingSessionId = local.myActiveSessionId;
+          renderSessionSelect();
+          renderHistory();
+          saveShared();
+        }
 
-        viewingSessionId = local.myActiveSessionId;
-        renderAll();
-        saveShared();
+        rollRowBtn.disabled = availablePairs().length === 0;
+        rollColBtn.disabled = availablePairs().length === 0;
       }
-    }, 70);
-  });
+    }, 80);
+  }
+
+  rollRowBtn.addEventListener('click', () => rollDie('row'));
+  rollColBtn.addEventListener('click', () => rollDie('col'));
 </script>
 
 </body>
